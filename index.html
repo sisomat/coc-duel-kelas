@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoC Duel Kelas: Pecahan Kelas 5 MI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = { theme: { extend: { fontFamily: { sans: ['Space Grotesk', 'sans-serif'], display: ['Orbitron', 'sans-serif'] } } } }
+</script>
+<style>
+:root{--bg:#060914;--ink:#E8F0FF;--mute:#8E9BBE;--cyan:#27E8FF;--gold:#FFC94D;--mag:#FF4F93;--lime:#5CFFA8;--glass:rgba(12,19,42,.88)}
+html{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;overflow-x:hidden}
+.stage{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(60% 50% at 85% 0%,rgba(39,232,255,.15),transparent 70%),radial-gradient(50% 45% at 0% 100%,rgba(255,79,147,.12),transparent 70%),var(--bg)}
+.stage::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(120,160,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(120,160,255,.07) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse at center,#000 25%,transparent 78%);mask-image:radial-gradient(ellipse at center,#000 25%,transparent 78%);animation:drift 30s linear infinite}
+@keyframes drift{to{background-position:0 44px,44px 0}}
+/* Panel bersudut potong (chamfer) */
+.hx{--acc:var(--cyan);--edge:rgba(120,160,255,.26);--c:14px;display:block;padding:1px;background:var(--edge);clip-path:polygon(var(--c) 0,100% 0,100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,0 100%,0 var(--c));transition:transform .18s,background .18s;text-align:left}
+.hx-in{display:block;height:100%;background:var(--glass);clip-path:polygon(var(--c) 0,100% 0,100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,0 100%,0 var(--c))}
+button.hx:not(:disabled){cursor:pointer}
+button.hx:not(:disabled):hover{--edge:var(--acc);transform:translateY(-3px)}
+button.hx:disabled{cursor:default}
+.btn{--acc:var(--cyan);background:var(--acc);color:#04101F;font-family:Orbitron,sans-serif;font-weight:700;font-size:.85rem;padding:.9rem 1.6rem;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);transition:transform .15s,filter .15s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.12)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-ghost{background:rgba(120,160,255,.14);color:var(--ink);padding:.6rem 1rem;font-size:.75rem}
+.btn-ghost:hover{background:rgba(120,160,255,.26)}
+:where(button,input):focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.title{font-family:Orbitron,sans-serif;font-weight:900;background:linear-gradient(100deg,#fff 42%,var(--cyan) 50%,#fff 58%);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sweep 2.6s ease-out .3s 1 both;text-shadow:0 0 40px rgba(39,232,255,.25)}
+@keyframes sweep{from{background-position:100% 0}to{background-position:0 0}}
+.pop{animation:pop .32s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+.fade{animation:fade .25s ease-out both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.badge{font-family:Orbitron,sans-serif;font-weight:700;width:2.6rem;height:2.6rem;flex:none;display:grid;place-items:center;background:rgba(120,160,255,.14);color:var(--acc)}
+.pip{height:6px;flex:1;background:rgba(120,160,255,.2)}
+.mute{color:var(--mute)}
+.learn h4{color:var(--gold)}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:#2b3760}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage" aria-hidden="true"></div>
+<div id="root"></div>
+<script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Data Soal (Total 45 Soal, 15 per Level: Mudah, Sedang, Susah) - Materi Pecahan Kelas 5 MI
+        const RAW_QUESTIONS = [
+            // --- MUDAH (15 Soal) ---
+            ["Mudah", 10, "Tanda yang tepat untuk melengkapi {3/8} ... {5/8} adalah...", ["<", ">", "=", "Tidak dapat dibandingkan"], 0, "Penyebut sama (8), jadi bandingkan pembilangnya: 3 dan 5. Jadi {3/8} < {5/8}."],
+            ["Mudah", 10, "Manakah pecahan yang lebih besar: {2/3} atau {2/5}?", ["{2/5}", "{2/3}", "Sama besar", "Tidak bisa dibandingkan"], 1, "Pembilang sama (2). Jika pembilang sama, pecahan dengan penyebut lebih kecil nilainya lebih besar. Jadi pecahan yang lebih besar adalah {2/3}."],
+            ["Mudah", 10, "Manakah pecahan yang lebih kecil: {7/10} atau {4/10}?", ["{4/10}", "Tidak bisa dibandingkan", "Sama besar", "{7/10}"], 0, "Penyebut sama (10), jadi bandingkan pembilangnya: 7 dan 4. Jadi pecahan yang lebih kecil adalah {4/10}."],
+            ["Mudah", 10, "Tanda yang tepat untuk melengkapi {1/2} ... {1/4} adalah...", ["=", "Tidak dapat dibandingkan", ">", "<"], 2, "Pembilang sama (1). Jika pembilang sama, pecahan dengan penyebut lebih kecil nilainya lebih besar. Jadi {1/2} > {1/4}."],
+            ["Mudah", 10, "Urutan pecahan {3/8}, {1/8}, {5/8} dari yang terkecil ke terbesar adalah...", ["{5/8}, {1/8}, {3/8}", "{1/8}, {3/8}, {5/8}", "{5/8}, {3/8}, {1/8}", "{3/8}, {5/8}, {1/8}"], 1, "Penyebutnya sudah sama (8), jadi bandingkan pembilangnya. Urutan dari terkecil: {1/8}, {3/8}, {5/8}."],
+            ["Mudah", 10, "Urutan pecahan {4/7}, {6/7}, {2/7} dari yang terbesar ke terkecil adalah...", ["{4/7}, {2/7}, {6/7}", "{4/7}, {6/7}, {2/7}", "{6/7}, {4/7}, {2/7}", "{2/7}, {4/7}, {6/7}"], 2, "Penyebutnya sudah sama (7), jadi bandingkan pembilangnya. Urutan dari terbesar: {6/7}, {4/7}, {2/7}."],
+            ["Mudah", 10, "Urutan pecahan {1/3}, {1/5}, {1/2} dari yang terkecil ke terbesar adalah...", ["{1/5}, {1/3}, {1/2}", "{1/2}, {1/5}, {1/3}", "{1/5}, {1/2}, {1/3}", "{1/2}, {1/3}, {1/5}"], 0, "KPK penyebutnya adalah 30. {1/3} = {10/30}, {1/5} = {6/30}, {1/2} = {15/30}. Urutan dari terkecil: {1/5}, {1/3}, {1/2}."],
+            ["Mudah", 10, "Urutan pecahan {5/6}, {1/6}, {3/6} dari yang terbesar ke terkecil adalah...", ["{5/6}, {3/6}, {1/6}", "{1/6}, {3/6}, {5/6}", "{1/6}, {5/6}, {3/6}", "{3/6}, {5/6}, {1/6}"], 0, "Penyebutnya sudah sama (6), jadi bandingkan pembilangnya. Urutan dari terbesar: {5/6}, {3/6}, {1/6}."],
+            ["Mudah", 10, "Bentuk pecahan campuran dari {7/3} adalah...", ["{3 1/3}", "{2 1/3}", "{1 1/3}", "{2 2/3}"], 1, "7 ÷ 3 = 2 sisa 1. Bilangan bulatnya 2, pembilangnya 1, penyebut tetap 3. Jadi {7/3} = {2 1/3}."],
+            ["Mudah", 10, "Bentuk pecahan campuran dari {9/4} adalah...", ["{2 3/4}", "{2 1/4}", "{3 1/4}", "{1 1/4}"], 1, "9 ÷ 4 = 2 sisa 1. Bilangan bulatnya 2, pembilangnya 1, penyebut tetap 4. Jadi {9/4} = {2 1/4}."],
+            ["Mudah", 10, "Bentuk pecahan campuran dari {11/5} adalah...", ["{3 1/5}", "{2 4/5}", "{2 1/5}", "{1 1/5}"], 2, "11 ÷ 5 = 2 sisa 1. Bilangan bulatnya 2, pembilangnya 1, penyebut tetap 5. Jadi {11/5} = {2 1/5}."],
+            ["Mudah", 10, "Bentuk pecahan campuran dari {13/6} adalah...", ["{1 1/6}", "{2 5/6}", "{3 1/6}", "{2 1/6}"], 3, "13 ÷ 6 = 2 sisa 1. Bilangan bulatnya 2, pembilangnya 1, penyebut tetap 6. Jadi {13/6} = {2 1/6}."],
+            ["Mudah", 10, "Hasil dari {2/7} + {3/7} (bentuk paling sederhana) adalah...", ["{4/7}", "{5/7}", "{5/14}", "{6/7}"], 1, "Penyebut sama, jumlahkan pembilangnya: 2 + 3 = 5, jadi {5/7}."],
+            ["Mudah", 10, "Hasil dari {3/8} + {4/8} (bentuk paling sederhana) adalah...", ["{7/16}", "{3/4}", "1", "{7/8}"], 3, "Penyebut sama, jumlahkan pembilangnya: 3 + 4 = 7, jadi {7/8}."],
+            ["Mudah", 10, "Hasil dari {3/5} + {4/5} (bentuk paling sederhana) adalah...", ["{1 1/5}", "{1 3/5}", "{1 2/5}", "{7/10}"], 2, "Penyebut sama, jumlahkan pembilangnya: 3 + 4 = 7, jadi {7/5}. Sederhanakan/ubah: {7/5} = {1 2/5}."],
+            // --- SEDANG (15 Soal) ---
+            ["Sedang", 25, "Manakah pecahan yang lebih besar: {3/4} atau {5/6}?", ["{5/6}", "Sama besar", "{3/4}", "Tidak bisa dibandingkan"], 0, "KPK dari 4 dan 6 adalah 12. {3/4} = {9/12} dan {5/6} = {10/12}. Jadi pecahan yang lebih besar adalah {5/6}."],
+            ["Sedang", 25, "Tanda yang tepat untuk melengkapi {2/3} ... {5/8} adalah...", ["<", "=", ">", "Tidak dapat dibandingkan"], 2, "KPK dari 3 dan 8 adalah 24. {2/3} = {16/24} dan {5/8} = {15/24}. Jadi {2/3} > {5/8}."],
+            ["Sedang", 25, "Tanda yang tepat untuk melengkapi {3/7} ... {4/9} adalah...", ["Tidak dapat dibandingkan", "<", ">", "="], 1, "KPK dari 7 dan 9 adalah 63. {3/7} = {27/63} dan {4/9} = {28/63}. Jadi {3/7} < {4/9}."],
+            ["Sedang", 25, "Manakah pecahan yang lebih kecil: {7/12} atau {3/4}?", ["Tidak bisa dibandingkan", "{7/12}", "{3/4}", "Sama besar"], 1, "KPK dari 12 dan 4 adalah 12. {7/12} = {7/12} dan {3/4} = {9/12}. Jadi pecahan yang lebih kecil adalah {7/12}."],
+            ["Sedang", 25, "Urutan pecahan {2/3}, {1/2}, {3/4} dari yang terkecil ke terbesar adalah...", ["{3/4}, {2/3}, {1/2}", "{3/4}, {1/2}, {2/3}", "{2/3}, {3/4}, {1/2}", "{1/2}, {2/3}, {3/4}"], 3, "KPK penyebutnya adalah 12. {2/3} = {8/12}, {1/2} = {6/12}, {3/4} = {9/12}. Urutan dari terkecil: {1/2}, {2/3}, {3/4}."],
+            ["Sedang", 25, "Urutan pecahan {1/3}, {5/6}, {2/3} dari yang terbesar ke terkecil adalah...", ["{1/3}, {2/3}, {5/6}", "{5/6}, {2/3}, {1/3}", "{5/6}, {1/3}, {2/3}", "{2/3}, {1/3}, {5/6}"], 1, "KPK penyebutnya adalah 6. {1/3} = {2/6}, {2/3} = {4/6}. Urutan dari terbesar: {5/6}, {2/3}, {1/3}."],
+            ["Sedang", 25, "Urutan pecahan {3/5}, {7/10}, {1/2} dari yang terkecil ke terbesar adalah...", ["{1/2}, {7/10}, {3/5}", "{3/5}, {1/2}, {7/10}", "{7/10}, {3/5}, {1/2}", "{1/2}, {3/5}, {7/10}"], 3, "KPK penyebutnya adalah 10. {3/5} = {6/10}, {1/2} = {5/10}. Urutan dari terkecil: {1/2}, {3/5}, {7/10}."],
+            ["Sedang", 25, "Urutan pecahan {3/4}, {5/8}, {1/2}, {7/8} dari yang terbesar ke terkecil adalah...", ["{5/8}, {1/2}, {7/8}, {3/4}", "{7/8}, {3/4}, {5/8}, {1/2}", "{3/4}, {1/2}, {7/8}, {5/8}", "{1/2}, {5/8}, {3/4}, {7/8}"], 1, "KPK penyebutnya adalah 8. {3/4} = {6/8}, {1/2} = {4/8}. Urutan dari terbesar: {7/8}, {3/4}, {5/8}, {1/2}."],
+            ["Sedang", 25, "Bentuk pecahan campuran dari {17/5} adalah...", ["{4 2/5}", "{2 2/5}", "{3 3/5}", "{3 2/5}"], 3, "17 ÷ 5 = 3 sisa 2. Bilangan bulatnya 3, pembilangnya 2, penyebut tetap 5. Jadi {17/5} = {3 2/5}."],
+            ["Sedang", 25, "Bentuk pecahan campuran dari {29/6} adalah...", ["{3 5/6}", "{4 5/6}", "{5 5/6}", "{4 1/6}"], 1, "29 ÷ 6 = 4 sisa 5. Bilangan bulatnya 4, pembilangnya 5, penyebut tetap 6. Jadi {29/6} = {4 5/6}."],
+            ["Sedang", 25, "Bentuk pecahan campuran dari {35/8} adalah...", ["{4 3/8}", "{4 5/8}", "{5 3/8}", "{3 3/8}"], 0, "35 ÷ 8 = 4 sisa 3. Bilangan bulatnya 4, pembilangnya 3, penyebut tetap 8. Jadi {35/8} = {4 3/8}."],
+            ["Sedang", 25, "Bentuk pecahan campuran dari {47/9} adalah...", ["{6 2/9}", "{4 2/9}", "{5 7/9}", "{5 2/9}"], 3, "47 ÷ 9 = 5 sisa 2. Bilangan bulatnya 5, pembilangnya 2, penyebut tetap 9. Jadi {47/9} = {5 2/9}."],
+            ["Sedang", 25, "Hasil dari {1/2} + {1/3} (bentuk paling sederhana) adalah...", ["{2/3}", "{5/6}", "1", "{2/5}"], 1, "KPK dari 2 dan 3 adalah 6. {3/6} + {2/6} = {5/6}."],
+            ["Sedang", 25, "Hasil dari {3/4} + {1/8} (bentuk paling sederhana) adalah...", ["{3/4}", "{4/12}", "1", "{7/8}"], 3, "KPK dari 4 dan 8 adalah 8. {6/8} + {1/8} = {7/8}."],
+            ["Sedang", 25, "Hasil dari {3/4} + {5/6} (bentuk paling sederhana) adalah...", ["{1 7/12}", "{8/10}", "{1 1/2}", "{1 2/3}"], 0, "KPK dari 4 dan 6 adalah 12. {9/12} + {10/12} = {19/12}. Sederhanakan/ubah: {19/12} = {1 7/12}."],
+            // --- SUSAH (15 Soal) ---
+            ["Susah", 50, "Manakah pecahan yang paling besar di antara {3/5}, {5/8}, {7/10}, dan {2/3}?", ["{7/10}", "{2/3}", "{5/8}", "{3/5}"], 0, "KPK penyebutnya adalah 120. {3/5} = {72/120}, {5/8} = {75/120}, {7/10} = {84/120}, {2/3} = {80/120}. Pecahan yang paling besar adalah {7/10}."],
+            ["Susah", 50, "Manakah pecahan yang paling kecil di antara {5/6}, {7/9}, {3/4}, dan {11/12}?", ["{7/9}", "{3/4}", "{11/12}", "{5/6}"], 1, "KPK penyebutnya adalah 36. {5/6} = {30/36}, {7/9} = {28/36}, {3/4} = {27/36}, {11/12} = {33/36}. Pecahan yang paling kecil adalah {3/4}."],
+            ["Susah", 50, "Urutan pecahan {5/6}, {7/12}, {3/4}, {2/3} dari yang terkecil ke terbesar adalah...", ["{5/6}, {7/12}, {3/4}, {2/3}", "{7/12}, {2/3}, {3/4}, {5/6}", "{3/4}, {7/12}, {5/6}, {2/3}", "{5/6}, {3/4}, {2/3}, {7/12}"], 1, "KPK penyebutnya adalah 12. {5/6} = {10/12}, {3/4} = {9/12}, {2/3} = {8/12}. Urutan dari terkecil: {7/12}, {2/3}, {3/4}, {5/6}."],
+            ["Susah", 50, "Urutan pecahan {5/4}, {1 2/3}, {1 1/2}, {7/4} dari yang terbesar ke terkecil adalah...", ["{1 1/2}, {7/4}, {1 2/3}, {5/4}", "{5/4}, {1 1/2}, {1 2/3}, {7/4}", "{1 2/3}, {1 1/2}, {7/4}, {5/4}", "{7/4}, {1 2/3}, {1 1/2}, {5/4}"], 3, "KPK penyebutnya adalah 12. {5/4} = {15/12}, {1 2/3} = {20/12}, {1 1/2} = {18/12}, {7/4} = {21/12}. Urutan dari terbesar: {7/4}, {1 2/3}, {1 1/2}, {5/4}."],
+            ["Susah", 50, "Urutan pecahan {9/4}, {2 2/5}, {11/5}, {2 1/3} dari yang terkecil ke terbesar adalah...", ["{2 2/5}, {2 1/3}, {9/4}, {11/5}", "{11/5}, {9/4}, {2 1/3}, {2 2/5}", "{11/5}, {2 2/5}, {9/4}, {2 1/3}", "{11/5}, {2 2/5}, {2 1/3}, {9/4}"], 1, "KPK penyebutnya adalah 60. {9/4} = {135/60}, {2 2/5} = {144/60}, {11/5} = {132/60}, {2 1/3} = {140/60}. Urutan dari terkecil: {11/5}, {9/4}, {2 1/3}, {2 2/5}."],
+            ["Susah", 50, "Ibu membeli {23/4} kg beras. Jika dinyatakan dalam pecahan campuran, banyak beras Ibu adalah... kg", ["{6 3/4}", "{4 3/4}", "{5 1/4}", "{5 3/4}"], 3, "23 ÷ 4 = 5 sisa 3. Bilangan bulatnya 5, pembilangnya 3, penyebut tetap 4. Jadi {23/4} = {5 3/4}."],
+            ["Susah", 50, "Hasil dari {1/2} + {1/3} + {1/6} adalah...", ["{5/6}", "1", "{1 1/6}", "{2/3}"], 1, "KPK dari 2, 3, dan 6 adalah 6. {3/6} + {2/6} + {1/6} = {6/6} = 1."],
+            ["Susah", 50, "Hasil dari {1 1/2} + {2 3/4} (bentuk paling sederhana) adalah...", ["{14/6}", "4", "{4 1/4}", "{4 1/2}"], 2, "Ubah dulu ke pecahan biasa: {1 1/2} = {3/2}, {2 3/4} = {11/4}. KPK dari 2 dan 4 adalah 4. {6/4} + {11/4} = {17/4}. Sederhanakan/ubah: {17/4} = {4 1/4}."],
+            ["Susah", 50, "Hasil dari {2 2/3} + {1 3/4} (bentuk paling sederhana) adalah...", ["{4 1/2}", "{15/7}", "{4 1/3}", "{4 5/12}"], 3, "Ubah dulu ke pecahan biasa: {2 2/3} = {8/3}, {1 3/4} = {7/4}. KPK dari 3 dan 4 adalah 12. {32/12} + {21/12} = {53/12}. Sederhanakan/ubah: {53/12} = {4 5/12}."],
+            ["Susah", 50, "Bu Ani membeli {3/4} kg gula dan {2/3} kg tepung. Berat seluruh belanjaan Bu Ani adalah... kg", ["{1 1/2}", "{1 5/12}", "{5/7}", "{1 1/3}"], 1, "KPK dari 4 dan 3 adalah 12. {9/12} + {8/12} = {17/12}. Sederhanakan/ubah: {17/12} = {1 5/12}."],
+            ["Susah", 50, "Dodi berlari {2/5} km pada pagi hari dan {3/4} km pada sore hari. Jarak lari Dodi seluruhnya adalah... km", ["{5/9}", "{1 1/5}", "{1 1/10}", "{1 3/20}"], 3, "KPK dari 5 dan 4 adalah 20. {8/20} + {15/20} = {23/20}. Sederhanakan/ubah: {23/20} = {1 3/20}."],
+            ["Susah", 50, "Pecahan yang nilainya terletak di antara {1/3} dan {1/2} adalah...", ["{1/6}", "{2/5}", "{3/5}", "{1/4}"], 1, "Samakan penyebut menjadi 30: {1/3} = {10/30} dan {1/2} = {15/30}. {2/5} = {12/30}, dan 12 berada di antara 10 dan 15. Jadi jawabannya {2/5}."],
+            ["Susah", 50, "Urutkan hasil berikut dari yang terkecil: {1/3} + {1/4}, {2/3}, {3/4}, dan {1/2} + {1/3}. Urutan yang benar adalah...", ["{3/4}, {5/6}, {2/3}, {7/12}", "{5/6}, {3/4}, {2/3}, {7/12}", "{3/4}, {7/12}, {2/3}, {5/6}", "{7/12}, {2/3}, {3/4}, {5/6}"], 3, "Hitung dulu: {1/3} + {1/4} = {7/12} dan {1/2} + {1/3} = {5/6}. KPK penyebutnya adalah 12. {2/3} = {8/12}, {3/4} = {9/12}, {5/6} = {10/12}. Urutan dari terkecil: {7/12}, {2/3}, {3/4}, {5/6}."],
+            ["Susah", 50, "Manakah yang lebih besar: {2/3} + {1/4} atau {1 1/6}?", ["{1 1/6}", "{2/3} + {1/4}", "Tidak bisa dibandingkan", "Sama besar"], 0, "{2/3} + {1/4} = {8/12} + {3/12} = {11/12}, nilainya kurang dari 1. Sedangkan {1 1/6} lebih dari 1. Jadi {1 1/6} lebih besar."],
+            ["Susah", 50, "Rina membaca {2/5} bagian buku pada hari Senin dan {1/3} bagian pada hari Selasa. Bagian buku yang sudah dibaca Rina adalah...", ["{3/8}", "{4/5}", "{2/3}", "{11/15}"], 3, "KPK dari 5 dan 3 adalah 15. {6/15} + {5/15} = {11/15}."],
+        ];
+
+        // Render pecahan bertumpuk: {a/b} atau {w a/b} (campuran)
+        const Frac = ({ w, n, d }) => (
+            <span className="inline-flex items-center align-middle mx-1 whitespace-nowrap">
+                {w && <span className="mr-1">{w}</span>}
+                <span className="inline-flex flex-col items-center text-center leading-none" style={{ fontSize: '0.85em' }}>
+                    <span className="px-1 pb-[2px] border-b-2 border-current">{n}</span>
+                    <span className="px-1 pt-[2px]">{d}</span>
+                </span>
+            </span>
+        );
+        const M = (text) => {
+            if (typeof text !== 'string') return text;
+            const re = /\{(?:(\d+)\s)?(\d+)\/(\d+)\}/g;
+            const parts = []; let last = 0, m, k = 0;
+            while ((m = re.exec(text)) !== null) {
+                if (m.index > last) parts.push(text.slice(last, m.index));
+                parts.push(<Frac key={k++} w={m[1]} n={m[2]} d={m[3]} />);
+                last = m.index + m[0].length;
+            }
+            if (last < text.length) parts.push(text.slice(last));
+            return parts;
+        };
+
+        const QUESTIONS_DATA = RAW_QUESTIONS.map((q, idx) => ({
+            id: idx + 1,
+            category: q[0],
+            points: q[1],
+            q: q[2],
+            options: q[3],
+            answer: q[4],
+            explanation: q[5]
+        }));
+
+
+        const LEVELS = [
+            { id: 'Mudah', desc: 'Membandingkan, mengurutkan, campuran, dan jumlah dasar', acc: '#5CFFA8', time: 30 },
+            { id: 'Sedang', desc: 'Beda penyebut, pecahan campuran, dan penjumlahan', acc: '#27E8FF', time: 45 },
+            { id: 'Susah', desc: 'Soal cerita HOTS, gabungan jumlah, dan urutan', acc: '#FF4F93', time: 60 }
+        ].map(l => ({ ...l, max: QUESTIONS_DATA.filter(q => q.category === l.id).reduce((s, q) => s + q.points, 0) }));
+        const TEAM_COLORS = ['#27E8FF', '#FFC94D', '#FF4F93', '#5CFFA8'];
+        const STATUS_COLOR = { unopened: 'rgba(120,160,255,.2)', correct: '#5CFFA8', wrong: '#FF4F93' };
+        const freshCards = () => QUESTIONS_DATA.map(q => ({ ...q, status: 'unopened' }));
+
+        // Efek suara (satu AudioContext dipakai ulang)
+        let _ctx = null, _muted = false;
+        const playSound = (type) => {
+            if (_muted) return;
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            _ctx = _ctx || new AC();
+            if (_ctx.state === 'suspended') _ctx.resume();
+            const ctx = _ctx, t = ctx.currentTime, osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            const env = (peak, len) => { gain.gain.setValueAtTime(0.0001, t); gain.gain.linearRampToValueAtTime(peak, t + 0.04); gain.gain.exponentialRampToValueAtTime(0.0001, t + len); osc.start(t); osc.stop(t + len); };
+            if (type === 'correct') { osc.type = 'sine'; [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => osc.frequency.setValueAtTime(f, t + i * 0.1)); env(0.3, 0.55); }
+            else if (type === 'wrong') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, t); osc.frequency.exponentialRampToValueAtTime(100, t + 0.3); env(0.25, 0.4); }
+            else if (type === 'tick') { osc.type = 'square'; osc.frequency.setValueAtTime(1200, t); env(0.06, 0.08); }
+            else { osc.type = 'triangle'; osc.frequency.setValueAtTime(800, t); env(0.1, 0.1); }
+        };
+        const burst = (big) => {
+            const colors = ['#FFC94D', '#5CFFA8', '#27E8FF', '#FF4F93'];
+            const end = Date.now() + (big ? 3500 : 1600);
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors, zIndex: 100 });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors, zIndex: 100 });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            })();
+        };
+
+        const CloseIcon = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>;
+
+        // Modal soal dengan timer lingkaran dan pintasan keyboard (A-D / 1-4)
+        function QuestionModal({ card, timerOn, level, team, teamColor, onAnswer, onClose }) {
+            const total = level.time, acc = level.acc;
+            const [left, setLeft] = useState(total);
+            const done = useRef(false);
+            const answer = (i) => { if (done.current) return; done.current = true; onAnswer(i); };
+            useEffect(() => {
+                if (!timerOn) return;
+                const id = setInterval(() => setLeft(s => s - 1), 1000);
+                return () => clearInterval(id);
+            }, [timerOn]);
+            useEffect(() => {
+                if (!timerOn) return;
+                if (left <= 0) answer(-1);
+                else if (left <= 5) playSound('tick');
+            }, [left]);
+            useEffect(() => {
+                const h = (e) => {
+                    if (e.key === 'Escape') { if (!done.current) onClose(); return; }
+                    if (e.key.length !== 1) return;
+                    const i = 'abcd'.indexOf(e.key.toLowerCase()), j = '1234'.indexOf(e.key);
+                    if (i > -1) answer(i); else if (j > -1) answer(j);
+                };
+                window.addEventListener('keydown', h);
+                return () => window.removeEventListener('keydown', h);
+            }, []);
+            const R = 26, C = 2 * Math.PI * R;
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 fade" style={{ background: 'rgba(4,7,18,.85)', backdropFilter: 'blur(6px)' }}>
+                    <div className="hx pop w-full max-w-4xl max-h-[92vh] overflow-y-auto" style={{ '--acc': acc, '--edge': acc + '88', '--c': '22px' }} role="dialog" aria-label="Soal">
+                        <div className="hx-in">
+                            <div className="flex items-center justify-between gap-4 p-5 md:p-6 border-b border-white/10">
+                                <div>
+                                    <div className="font-display font-bold text-lg" style={{ color: acc }}>Level {level.id} · {card.points} poin</div>
+                                    <div className="mute text-sm mt-1">Menjawab: <b style={{ color: teamColor }}>{team}</b></div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {timerOn && (
+                                        <svg width="64" height="64" viewBox="0 0 64 64" role="timer" aria-label={`Sisa waktu ${Math.max(0, left)} detik`}>
+                                            <circle cx="32" cy="32" r={R} fill="none" stroke="rgba(120,160,255,.18)" strokeWidth="5" />
+                                            <circle cx="32" cy="32" r={R} fill="none" stroke={left <= 10 ? '#FF4F93' : acc} strokeWidth="5" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - Math.max(0, left) / total)} transform="rotate(-90 32 32)" style={{ transition: 'stroke-dashoffset 1s linear' }} />
+                                            <text x="32" y="38" textAnchor="middle" fill="#E8F0FF" fontFamily="Orbitron" fontWeight="700" fontSize="18">{Math.max(0, left)}</text>
+                                        </svg>
+                                    )}
+                                    <button onClick={onClose} className="mute hover:text-white p-2" aria-label="Tutup soal tanpa menjawab"><CloseIcon /></button>
+                                </div>
+                            </div>
+                            <div className="p-6 md:p-10">
+                                <h3 className="text-2xl md:text-4xl leading-relaxed font-medium text-center mb-10">{M(card.q)}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                                    {card.options.map((opt, i) => (
+                                        <button key={i} onClick={() => answer(i)} className="hx" style={{ '--acc': acc, '--c': '12px' }}>
+                                            <span className="hx-in flex items-center gap-4 p-4">
+                                                <span className="badge" style={{ '--acc': acc }}>{'ABCD'[i]}</span>
+                                                <span className="text-xl md:text-2xl font-medium">{M(opt)}</span>
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="mute text-sm text-center mt-8">Satu jawaban per kartu, keputusan kelompok tidak bisa diubah. Pintasan keyboard: A–D atau 1–4.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const LEARN_SLIDES = [
+                {
+                    title: "1. Membandingkan Dua Pecahan",
+                    content: (
+                        <div className="text-left space-y-4">
+                            <p>{M("Untuk membandingkan dua pecahan, lihat dulu penyebutnya.")}</p>
+                            <ul className="list-disc pl-5 text-gray-300 space-y-1"><li>{M("Penyebut sama: pembilang lebih besar, nilainya lebih besar. Contoh {3/7} < {5/7}.")}</li><li>{M("Pembilang sama: penyebut lebih kecil, nilainya lebih besar. Contoh {1/2} > {1/4}.")}</li><li>{M("Penyebut berbeda: samakan dulu penyebutnya dengan KPK.")}</li></ul>
+                            <div className="bg-white/5 p-5 rounded-md border border-white/10 mt-4">
+                                <h4 className="text-[#FFC94D] mb-3 font-bold text-xl">💡 Contoh Soal:</h4>
+                                <p className="mb-2">{M("Bandingkan {3/4} dan {5/6}.")}</p>
+                                <div className="bg-[#0b1230] p-3 rounded mb-2 space-y-1"><p className="text-gray-300 text-sm">{M("KPK dari 4 dan 6 adalah 12.")}</p><p className="text-gray-300 text-sm">{M("{3/4} = {9/12} dan {5/6} = {10/12}.")}</p></div>
+                                <div className="bg-emerald-400/10 p-3 rounded border border-emerald-400/30">
+                                    <p className="text-emerald-300"><strong>Jawab:</strong> {M("Karena 9 < 10, maka {3/4} < {5/6}.")}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                },
+                {
+                    title: "2. Mengurutkan Pecahan",
+                    content: (
+                        <div className="text-left space-y-4">
+                            <p>{M("Samakan penyebut semua pecahan, lalu urutkan berdasarkan pembilangnya.")}</p>
+                            <ul className="list-disc pl-5 text-gray-300 space-y-1"><li>{M("Urut naik: dari terkecil ke terbesar.")}</li><li>{M("Urut turun: dari terbesar ke terkecil.")}</li><li>{M("Pecahan campuran: ubah dulu ke pecahan biasa, atau bandingkan bilangan bulatnya lebih dahulu.")}</li></ul>
+                            <div className="bg-white/5 p-5 rounded-md border border-white/10 mt-4">
+                                <h4 className="text-[#FFC94D] mb-3 font-bold text-xl">💡 Contoh Soal:</h4>
+                                <p className="mb-2">{M("Urutkan dari terkecil: {2/3}, {1/2}, {3/4}.")}</p>
+                                <div className="bg-[#0b1230] p-3 rounded mb-2 space-y-1"><p className="text-gray-300 text-sm">{M("KPK dari 3, 2, dan 4 adalah 12.")}</p><p className="text-gray-300 text-sm">{M("{2/3} = {8/12}, {1/2} = {6/12}, {3/4} = {9/12}.")}</p></div>
+                                <div className="bg-emerald-400/10 p-3 rounded border border-emerald-400/30">
+                                    <p className="text-emerald-300"><strong>Jawab:</strong> {M("Urutannya: {1/2}, {2/3}, {3/4}.")}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                },
+                {
+                    title: "3. Pecahan Biasa ke Campuran",
+                    content: (
+                        <div className="text-left space-y-4">
+                            <p>{M("Pecahan yang pembilangnya lebih besar dari penyebutnya dapat diubah menjadi pecahan campuran dengan pembagian.")}</p>
+                            <ul className="list-disc pl-5 text-gray-300 space-y-1"><li>{M("Bagi pembilang dengan penyebut.")}</li><li>{M("Hasil bagi menjadi bilangan bulat.")}</li><li>{M("Sisa bagi menjadi pembilang, penyebut tetap.")}</li></ul>
+                            <div className="bg-white/5 p-5 rounded-md border border-white/10 mt-4">
+                                <h4 className="text-[#FFC94D] mb-3 font-bold text-xl">💡 Contoh Soal:</h4>
+                                <p className="mb-2">{M("Ubah {11/4} menjadi pecahan campuran.")}</p>
+                                <div className="bg-[#0b1230] p-3 rounded mb-2 space-y-1"><p className="text-gray-300 text-sm">{M("11 ÷ 4 = 2 sisa 3.")}</p><p className="text-gray-300 text-sm">{M("Bilangan bulat = 2, pembilang = 3, penyebut = 4.")}</p></div>
+                                <div className="bg-emerald-400/10 p-3 rounded border border-emerald-400/30">
+                                    <p className="text-emerald-300"><strong>Jawab:</strong> {M("{11/4} = {2 3/4}.")}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                },
+                {
+                    title: "4. Penjumlahan Pecahan",
+                    content: (
+                        <div className="text-left space-y-4">
+                            <p>{M("Pecahan hanya dapat dijumlahkan langsung jika penyebutnya sama.")}</p>
+                            <ul className="list-disc pl-5 text-gray-300 space-y-1"><li>{M("Penyebut sama: jumlahkan pembilangnya, penyebut tetap.")}</li><li>{M("Penyebut berbeda: samakan penyebut dengan KPK, lalu jumlahkan.")}</li><li>{M("Jika hasilnya lebih dari 1, ubah ke pecahan campuran.")}</li></ul>
+                            <div className="bg-white/5 p-5 rounded-md border border-white/10 mt-4">
+                                <h4 className="text-[#FFC94D] mb-3 font-bold text-xl">💡 Contoh Soal:</h4>
+                                <p className="mb-2">{M("Hitunglah {3/4} + {5/6}.")}</p>
+                                <div className="bg-[#0b1230] p-3 rounded mb-2 space-y-1"><p className="text-gray-300 text-sm">{M("KPK dari 4 dan 6 adalah 12.")}</p><p className="text-gray-300 text-sm">{M("{9/12} + {10/12} = {19/12}.")}</p></div>
+                                <div className="bg-emerald-400/10 p-3 rounded border border-emerald-400/30">
+                                    <p className="text-emerald-300"><strong>Jawab:</strong> {M("{19/12} = {1 7/12}.")}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                },
+                {
+                    title: "5. Penjumlahan lalu Pengurutan",
+                    content: (
+                        <div className="text-left space-y-4">
+                            <p>{M("Pada soal gabungan, hitung dulu hasil penjumlahan, lalu bandingkan atau urutkan hasilnya.")}</p>
+                            <ul className="list-disc pl-5 text-gray-300 space-y-1"><li>{M("Sederhanakan setiap hasil penjumlahan.")}</li><li>{M("Samakan penyebut sebelum membandingkan.")}</li><li>{M("Hasil lebih dari 1 dapat diubah ke campuran agar mudah dibandingkan.")}</li></ul>
+                            <div className="bg-white/5 p-5 rounded-md border border-white/10 mt-4">
+                                <h4 className="text-[#FFC94D] mb-3 font-bold text-xl">💡 Contoh Soal:</h4>
+                                <p className="mb-2">{M("Urutkan dari terkecil: {1/2} + {1/4} dan {2/3}.")}</p>
+                                <div className="bg-[#0b1230] p-3 rounded mb-2 space-y-1"><p className="text-gray-300 text-sm">{M("{1/2} + {1/4} = {2/4} + {1/4} = {3/4}.")}</p><p className="text-gray-300 text-sm">{M("Bandingkan {3/4} dan {2/3}: {9/12} dan {8/12}.")}</p></div>
+                                <div className="bg-emerald-400/10 p-3 rounded border border-emerald-400/30">
+                                    <p className="text-emerald-300"><strong>Jawab:</strong> {M("Urutannya: {2/3}, lalu {1/2} + {1/4}.")}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+            ];
+
+
+        function App() {
+            const [screen, setScreen] = useState('setup'); // setup | menu | board | result
+            const [teamCount, setTeamCount] = useState(2);
+            const [names, setNames] = useState(['Tim Elang', 'Tim Harimau', 'Tim Garuda', 'Tim Naga']);
+            const [timerOn, setTimerOn] = useState(true);
+            const [teams, setTeams] = useState([]);
+            const [turn, setTurn] = useState(0);
+            const [cards, setCards] = useState(freshCards());
+            const [levelId, setLevelId] = useState(null);
+            const [activeCard, setActiveCard] = useState(null);
+            const [feedback, setFeedback] = useState(null);
+            const [showLearn, setShowLearn] = useState(false);
+            const [slide, setSlide] = useState(0);
+            const [muted, setMuted] = useState(false);
+            const [confirmEnd, setConfirmEnd] = useState(false);
+
+            useEffect(() => { _muted = muted; }, [muted]);
+            useEffect(() => { if (!confirmEnd) return; const id = setTimeout(() => setConfirmEnd(false), 3000); return () => clearTimeout(id); }, [confirmEnd]);
+            useEffect(() => {
+                if (!showLearn) return;
+                const h = (e) => {
+                    if (e.key === 'Escape') setShowLearn(false);
+                    if (e.key === 'ArrowRight') setSlide(s => Math.min(LEARN_SLIDES.length - 1, s + 1));
+                    if (e.key === 'ArrowLeft') setSlide(s => Math.max(0, s - 1));
+                };
+                window.addEventListener('keydown', h);
+                return () => window.removeEventListener('keydown', h);
+            }, [showLearn]);
+            useEffect(() => { if (screen === 'result' && Math.max(...teams.map(t => t.score)) > 0) burst(true); }, [screen]);
+
+            const level = LEVELS.find(l => l.id === levelId);
+            const opened = cards.filter(c => c.status !== 'unopened').length;
+            const multi = teams.length > 1;
+            const go = (fn) => () => { playSound('click'); fn(); };
+
+            const startGame = () => {
+                const list = teamCount === 1 ? ['Skor kelas'] : names.slice(0, teamCount).map((n, i) => n.trim() || `Tim ${i + 1}`);
+                setTeams(list.map(name => ({ name, score: 0, correct: 0, wrong: 0 })));
+                setCards(freshCards()); setTurn(0); setLevelId(null); setScreen('menu');
+            };
+            const handleAnswer = (idx) => {
+                const card = activeCard, ok = idx === card.answer, t = teams[turn];
+                playSound(ok ? 'correct' : 'wrong');
+                if (ok) burst(false);
+                setCards(cs => cs.map(c => c.id === card.id ? { ...c, status: ok ? 'correct' : 'wrong' } : c));
+                setTeams(ts => ts.map((x, i) => i === turn ? { ...x, score: x.score + (ok ? card.points : 0), correct: x.correct + (ok ? 1 : 0), wrong: x.wrong + (ok ? 0 : 1) } : x));
+                setFeedback({ ok, timeout: idx < 0, team: t.name, points: card.points, text: ok ? card.explanation : `Jawaban yang benar: ${card.options[card.answer]}\n\nCara cepat CoC: ${card.explanation}` });
+            };
+            const closeFeedback = () => {
+                playSound('click');
+                setActiveCard(null); setFeedback(null);
+                if (multi) setTurn(t => (t + 1) % teams.length);
+                if (cards.every(c => c.status !== 'unopened')) setScreen('result');
+            };
+            useEffect(() => {
+                if (!feedback) return;
+                const h = (e) => { if (e.key === 'Enter' || e.key === 'Escape') closeFeedback(); };
+                window.addEventListener('keydown', h);
+                return () => window.removeEventListener('keydown', h);
+            }, [feedback]);
+            const fullscreen = () => { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); };
+
+            const ranked = [...teams].sort((a, b) => b.score - a.score);
+            const winners = ranked.filter(t => t.score === (ranked[0] || {}).score);
+
+            return (
+                <div className="relative z-10 min-h-screen flex flex-col p-4 md:p-8 max-w-6xl mx-auto">
+
+                    {screen !== 'setup' && (
+                        <header className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                            <button onClick={go(() => { setLevelId(null); setScreen('menu'); })} className="text-left">
+                                <div className="font-display font-black text-xl md:text-2xl">Clash of Champions</div>
+                                <div className="mute text-sm">Pecahan · Matematika Kelas 5 MI</div>
+                            </button>
+                            <div className="flex flex-wrap gap-2" aria-label="Papan skor">
+                                {teams.map((t, i) => {
+                                    const col = TEAM_COLORS[i], active = multi && i === turn && screen !== 'result';
+                                    return (
+                                        <div key={i} className="hx" style={{ '--edge': active ? col : 'rgba(120,160,255,.26)', '--c': '10px' }} aria-current={active ? 'true' : undefined}>
+                                            <div className="hx-in px-4 py-2 flex items-center gap-3">
+                                                <span className="w-2.5 h-2.5 rounded-full" style={{ background: col, boxShadow: active ? `0 0 10px ${col}` : 'none' }}></span>
+                                                <span className="text-sm font-medium">{t.name}{active ? ' · giliran' : ''}</span>
+                                                <span className="font-display font-bold text-lg" style={{ color: col }}>{t.score}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="flex gap-2">
+                                <button className="btn btn-ghost" onClick={() => setMuted(m => !m)} aria-pressed={muted}>{muted ? 'Suara mati' : 'Suara hidup'}</button>
+                                <button className="btn btn-ghost" onClick={fullscreen}>Layar penuh</button>
+                                {screen !== 'result' && <button className="btn btn-ghost" onClick={() => confirmEnd ? (playSound('click'), setConfirmEnd(false), setScreen('result')) : setConfirmEnd(true)}>{confirmEnd ? 'Klik lagi untuk akhiri' : 'Akhiri duel'}</button>}
+                            </div>
+                        </header>
+                    )}
+
+                    <main className="flex-grow">
+
+                        {screen === 'setup' && (
+                            <div className="max-w-2xl mx-auto pt-6 md:pt-14 text-center">
+                                <h1 className="title text-4xl md:text-6xl leading-tight">Clash of Champions</h1>
+                                <p className="mute mt-3 text-lg">Duel kelas · Pecahan · Matematika Kelas 5 MI</p>
+                                <div className="hx pop mt-10" style={{ '--c': '22px' }}>
+                                    <div className="hx-in p-6 md:p-8 text-left space-y-7">
+                                        <div>
+                                            <div className="font-display font-bold mb-3">Jumlah tim</div>
+                                            <div className="grid grid-cols-4 gap-2" role="radiogroup">
+                                                {[1, 2, 3, 4].map(n => (
+                                                    <button key={n} role="radio" aria-checked={teamCount === n} onClick={() => { playSound('click'); setTeamCount(n); }} className="hx" style={{ '--acc': 'var(--gold)', '--edge': teamCount === n ? 'var(--gold)' : 'rgba(120,160,255,.26)', '--c': '8px' }}>
+                                                        <span className="hx-in block py-3 text-center font-display font-bold" style={{ color: teamCount === n ? 'var(--gold)' : 'var(--ink)' }}>{n === 1 ? 'Kelas' : n}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {teamCount > 1 && (
+                                            <div className="grid sm:grid-cols-2 gap-3">
+                                                {Array.from({ length: teamCount }).map((_, i) => (
+                                                    <label key={i} className="flex items-center gap-3 bg-white/5 px-3 py-2 border-l-4" style={{ borderColor: TEAM_COLORS[i] }}>
+                                                        <span className="sr-only">Nama tim {i + 1}</span>
+                                                        <input value={names[i]} maxLength={18} onChange={e => setNames(ns => ns.map((n, k) => k === i ? e.target.value : n))} className="bg-transparent w-full outline-none py-1" />
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <label className="flex items-center justify-between gap-4 cursor-pointer">
+                                            <span><span className="font-display font-bold block">Timer soal</span><span className="mute text-sm">Mudah 30 detik, Sedang 45 detik, Susah 60 detik. Waktu habis dihitung salah.</span></span>
+                                            <input type="checkbox" checked={timerOn} onChange={e => setTimerOn(e.target.checked)} className="w-6 h-6 accent-[#27E8FF]" />
+                                        </label>
+                                        <div className="flex flex-wrap gap-3 pt-2">
+                                            <button className="btn" onClick={() => { playSound('click'); startGame(); }}>Mulai duel</button>
+                                            <button className="btn btn-ghost" onClick={go(() => { setSlide(0); setShowLearn(true); })}>Buka modul belajar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="mute text-sm mt-5">Tim bergiliran memilih kartu. Jawaban benar menambah poin ke tim yang sedang giliran.</p>
+                            </div>
+                        )}
+
+                        {screen === 'menu' && (
+                            <div className="max-w-4xl mx-auto fade">
+                                <button onClick={go(() => { setSlide(0); setShowLearn(true); })} className="hx w-full mb-6" style={{ '--acc': 'var(--gold)', '--c': '20px' }}>
+                                    <span className="hx-in flex flex-col md:flex-row md:items-center justify-between gap-3 p-6">
+                                        <span><span className="font-display font-bold text-2xl block">Modul belajar</span><span className="mute">Rangkuman materi pecahan dan contoh soal sebelum bertanding.</span></span>
+                                        <span className="btn btn-ghost self-start md:self-auto" style={{ color: 'var(--gold)' }}>Mulai belajar</span>
+                                    </span>
+                                </button>
+                                <div className="grid md:grid-cols-3 gap-5">
+                                    {LEVELS.map(l => {
+                                        const lc = cards.filter(c => c.category === l.id);
+                                        const pts = lc.filter(c => c.status === 'correct').reduce((s, c) => s + c.points, 0);
+                                        return (
+                                            <button key={l.id} onClick={go(() => { setLevelId(l.id); setScreen('board'); })} className="hx" style={{ '--acc': l.acc, '--edge': l.acc + '66', '--c': '20px' }}>
+                                                <span className="hx-in flex flex-col h-full p-6">
+                                                    <span className="font-display font-black text-3xl" style={{ color: l.acc }}>{l.id}</span>
+                                                    <span className="mute mt-2 flex-grow">{l.desc}</span>
+                                                    <span className="flex gap-1 mt-6" aria-hidden="true">{lc.map(c => <span key={c.id} className="pip" style={{ background: STATUS_COLOR[c.status] }}></span>)}</span>
+                                                    <span className="flex justify-between text-sm mt-3"><span>{lc.filter(c => c.status !== 'unopened').length} dari 15 kartu</span><span style={{ color: l.acc }}>{pts} / {l.max} poin</span></span>
+                                                    <span className="mute text-sm mt-1">{timerOn ? `${l.time} detik per soal` : 'Tanpa timer'}</span>
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <p className="mute text-center mt-6">{opened} dari {cards.length} kartu sudah dibuka.</p>
+                            </div>
+                        )}
+
+                        {screen === 'board' && level && (
+                            <div className="fade">
+                                <div className="hx mb-6" style={{ '--edge': level.acc + '66', '--c': '16px' }}>
+                                    <div className="hx-in flex flex-col md:flex-row justify-between items-center gap-4 p-5">
+                                        <div className="text-center md:text-left">
+                                            <h2 className="font-display font-black text-3xl" style={{ color: level.acc }}>{level.id}</h2>
+                                            <p className="mute text-sm mt-1">{multi ? <>Giliran <b style={{ color: TEAM_COLORS[turn] }}>{teams[turn].name}</b>: pilih satu kartu.</> : 'Pilih kartu soal untuk dimainkan.'}</p>
+                                        </div>
+                                        <button className="btn btn-ghost" onClick={go(() => setScreen('menu'))}>Kembali ke level</button>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 md:gap-4">
+                                    {cards.filter(c => c.category === levelId).map((card, index) => {
+                                        const st = card.status, col = STATUS_COLOR[st];
+                                        return (
+                                            <button key={card.id} onClick={() => { if (st === 'unopened') { playSound('click'); setActiveCard(card); } }} disabled={st !== 'unopened'} className="hx" style={{ '--acc': level.acc, '--edge': st === 'unopened' ? 'rgba(120,160,255,.26)' : col + '99', '--c': '14px' }} aria-label={`Soal ${index + 1}, ${card.points} poin, ${st === 'unopened' ? 'belum dibuka' : st === 'correct' ? 'benar' : 'salah'}`}>
+                                                <span className="hx-in flex flex-col items-center justify-center py-5 aspect-[4/3]" style={{ opacity: st === 'unopened' ? 1 : .6 }}>
+                                                    <span className="font-display font-black text-4xl" style={{ color: st === 'unopened' ? 'var(--ink)' : col }}>{st === 'correct' ? '✓' : st === 'wrong' ? '✕' : index + 1}</span>
+                                                    <span className="text-xs mt-2 font-medium" style={{ color: level.acc }}>{card.points} poin</span>
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {screen === 'result' && (
+                            <div className="max-w-2xl mx-auto text-center pt-4 fade">
+                                <h2 className="title text-3xl md:text-5xl leading-tight">{multi ? (winners.length > 1 ? 'Hasil seri!' : `${winners[0].name} menang!`) : 'Duel selesai!'}</h2>
+                                <p className="mute mt-3">{opened} dari {cards.length} kartu dimainkan.</p>
+                                <div className="mt-8 space-y-3 text-left">
+                                    {ranked.map((t, i) => {
+                                        const col = TEAM_COLORS[teams.indexOf(t)], n = t.correct + t.wrong;
+                                        return (
+                                            <div key={i} className="hx" style={{ '--edge': i === 0 && t.score > 0 ? col : 'rgba(120,160,255,.26)', '--c': '16px' }}>
+                                                <div className="hx-in flex items-center gap-4 p-5">
+                                                    <span className="badge" style={{ '--acc': col }}>{i + 1}</span>
+                                                    <div className="flex-grow">
+                                                        <div className="font-bold text-lg">{t.name}</div>
+                                                        <div className="mute text-sm">{t.correct} benar, {t.wrong} salah{n ? ` · akurasi ${Math.round(t.correct / n * 100)}%` : ''}</div>
+                                                    </div>
+                                                    <div className="font-display font-black text-3xl" style={{ color: col }}>{t.score}</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="flex flex-wrap gap-3 justify-center mt-8">
+                                    {opened < cards.length && <button className="btn" onClick={go(() => setScreen('menu'))}>Lanjutkan duel</button>}
+                                    <button className={opened < cards.length ? 'btn btn-ghost' : 'btn'} onClick={go(() => setScreen('setup'))}>Duel baru</button>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Modul belajar */}
+                    {showLearn && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 fade" style={{ background: 'rgba(4,7,18,.85)', backdropFilter: 'blur(6px)' }}>
+                            <div className="hx pop w-full max-w-4xl max-h-[92vh]" style={{ '--edge': 'rgba(255,201,77,.5)', '--c': '22px' }} role="dialog" aria-label="Modul belajar">
+                                <div className="hx-in flex flex-col max-h-[92vh]">
+                                    <div className="flex justify-between items-center p-5 md:p-6 border-b border-white/10">
+                                        <div>
+                                            <div className="mute text-sm">Materi {slide + 1} dari {LEARN_SLIDES.length}</div>
+                                            <h2 className="font-display font-bold text-xl md:text-2xl mt-1">Modul belajar</h2>
+                                        </div>
+                                        <button onClick={go(() => setShowLearn(false))} className="mute hover:text-white p-2" aria-label="Tutup modul"><CloseIcon /></button>
+                                    </div>
+                                    <div className="p-6 md:p-10 overflow-y-auto flex-grow learn">
+                                        <div className="max-w-3xl mx-auto">
+                                            <h3 className="font-display font-bold text-2xl md:text-3xl text-[#FFC94D] mb-6 text-center">{LEARN_SLIDES[slide].title}</h3>
+                                            <div className="text-lg text-gray-200">{LEARN_SLIDES[slide].content}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center gap-4 p-5 border-t border-white/10">
+                                        <button className="btn btn-ghost" disabled={slide === 0} onClick={go(() => setSlide(s => Math.max(0, s - 1)))}>Sebelumnya</button>
+                                        <div className="flex gap-1.5 flex-grow max-w-[200px]" aria-hidden="true">{LEARN_SLIDES.map((_, i) => <span key={i} className="pip" style={{ background: i <= slide ? '#FFC94D' : undefined }}></span>)}</div>
+                                        {slide === LEARN_SLIDES.length - 1
+                                            ? <button className="btn" style={{ '--acc': 'var(--gold)' }} onClick={go(() => setShowLearn(false))}>Selesai belajar</button>
+                                            : <button className="btn" onClick={go(() => setSlide(s => Math.min(LEARN_SLIDES.length - 1, s + 1)))}>Berikutnya</button>}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Soal */}
+                    {activeCard && !feedback && (
+                        <QuestionModal key={activeCard.id} card={activeCard} timerOn={timerOn} level={LEVELS.find(l => l.id === activeCard.category)} team={teams[turn].name} teamColor={TEAM_COLORS[turn]} onAnswer={handleAnswer} onClose={go(() => setActiveCard(null))} />
+                    )}
+
+                    {/* Umpan balik */}
+                    {feedback && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 fade" style={{ background: 'rgba(4,7,18,.88)', backdropFilter: 'blur(8px)' }}>
+                            <div className="hx pop w-full max-w-2xl max-h-[92vh] overflow-y-auto" style={{ '--edge': feedback.ok ? '#5CFFA8' : '#FF4F93', '--c': '24px' }} role="alertdialog" aria-label="Hasil jawaban">
+                                <div className="hx-in p-8 md:p-10 text-center">
+                                    <h2 className="font-display font-black text-3xl md:text-4xl" style={{ color: feedback.ok ? '#5CFFA8' : '#FF4F93' }}>{feedback.ok ? 'Jawaban tepat!' : feedback.timeout ? 'Waktu habis' : 'Belum tepat'}</h2>
+                                    <p className="text-xl mt-4">{feedback.ok ? `${feedback.team} mendapat +${feedback.points} poin.` : 'Jadikan pelajaran untuk kartu berikutnya.'}</p>
+                                    <div className="bg-white/5 border border-white/10 p-5 text-left mt-7 mb-7">
+                                        <p className="text-[#FFC94D] font-bold mb-2">{feedback.ok ? 'Cara cepat CoC' : 'Pembahasan'}</p>
+                                        <p className="text-gray-300 leading-relaxed whitespace-pre-line text-lg">{M(feedback.text)}</p>
+                                    </div>
+                                    <button className="btn" style={{ '--acc': feedback.ok ? '#5CFFA8' : '#FF4F93' }} onClick={closeFeedback}>{multi ? 'Lanjut ke giliran berikutnya' : 'Tutup kartu'}</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <footer className="text-center mt-12 pt-6 border-t border-white/10 mute text-sm">Developer By Ifan Shovi</footer>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
